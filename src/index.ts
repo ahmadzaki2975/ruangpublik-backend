@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import mongoose from "mongoose";
+import userRouter from "./routes/userRoutes";
 
 dotenv.config();
 
@@ -34,6 +35,8 @@ app.get("/", (req: Request, res: Response) => {
   `
   );
 });
+// * User Routes
+app.use("/users", userRouter);
 
 // ? No Route Handler
 app.use((req, res) => {
