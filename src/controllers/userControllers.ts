@@ -7,11 +7,12 @@ interface CreateUserInput {
   password: string;
   email: string;
   role?: string;
+  salt: string;
 }
 
 const createUser = async (req: Request, res: Response) => {
   try {
-    const { username, password, email, role } = req.body as CreateUserInput;
+    const { username, password, email, role, salt } = req.body as CreateUserInput;
     const user = await User.create({
       username,
       password,
