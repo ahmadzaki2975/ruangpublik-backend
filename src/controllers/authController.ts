@@ -102,7 +102,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
     maxAge: 24 * 3600 * 1000,
   });
 
-  return res.json({
+  res.status(200).json({
     success: true,
     message: `User with email: ${data.email} logged in`,
     data: payload,
@@ -197,7 +197,7 @@ const userLoginController = async (req: Request, res: Response) => {
 };
 
 const userLogoutController = async (req: Request, res: Response) => {
-  res.cookie("refreshToken", "", {
+  res.cookie("accessToken", "", {
     maxAge: 0,
   });
   res.sendStatus(200);
