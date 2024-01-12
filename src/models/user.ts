@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   },
   nik: {
     nikCode: {
-      type: Number,
+      type: String,
       required: true,
     },
     is_verified: {

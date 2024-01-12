@@ -8,7 +8,6 @@ const deleteUser = async (req: Request, res: Response) => {
     if (user) {
       return res.status(200).json({ message: "User deleted" });
     }
-    throw new Error("User not found");
   } catch (error) {
     if (error instanceof Error) {
       return res.status(500).json({ error: error.message });

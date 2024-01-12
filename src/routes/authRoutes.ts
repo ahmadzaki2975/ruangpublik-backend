@@ -4,12 +4,14 @@ import {
   userSignupController,
   googleAuthCallback,
   googleAuthController,
+  userLogoutController,
 } from "../controllers/authController";
 
 const authRouter = Router();
 
 authRouter.post("/signup", userSignupController);
 authRouter.post("/login", userLoginController);
+authRouter.post("/logout", userLogoutController);
 authRouter.get("/google", googleAuthController);
 authRouter.get("/google/callback", googleAuthCallback);
 

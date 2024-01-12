@@ -3,8 +3,11 @@ import { MongooseError } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { google } from "googleapis";
+import dotenv from "dotenv";
 
 import User from "../models/user";
+
+dotenv.config();
 
 interface SignupUser {
   fullname: string;
@@ -80,9 +83,9 @@ const googleAuthCallback = async (req: Request, res: Response) => {
 
       return res
         .status(201)
-        .json({ success: true, message: `User with email: ${data.email} created!` });
+        .json({ success: true, message: `User with email: ${data.email} created!`, data: newUser });
     } catch (error) {
-      console.error(error);
+      return res.status(500).json({ success: false, error: "An unknown error occured" });
     }
   }
 
@@ -92,13 +95,17 @@ const googleAuthCallback = async (req: Request, res: Response) => {
 
   const accessToken = jwt.sign(payload, secret, { expiresIn });
 
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    maxAge: 24 * 3600 * 1000,
+  });
+
   return res.json({
     success: true,
     message: `User with email: ${data.email} logged in`,
-    data: {
-      ...payload,
-      accessToken,
-    },
+    data: payload,
   });
 };
 
@@ -166,10 +173,16 @@ const userLoginController = async (req: Request, res: Response) => {
 
     const accessToken = jwt.sign(payload, secret, { expiresIn });
 
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 24 * 3600 * 1000,
+    });
+
     return res.status(200).json({
       success: true,
       message: `User with email: ${email} logged in`,
-      data: { accessToken },
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -183,4 +196,17 @@ const userLoginController = async (req: Request, res: Response) => {
   }
 };
 
-export { googleAuthController, googleAuthCallback, userSignupController, userLoginController };
+const userLogoutController = async (req: Request, res: Response) => {
+  res.cookie("refreshToken", "", {
+    maxAge: 0,
+  });
+  res.sendStatus(200);
+};
+
+export {
+  googleAuthController,
+  googleAuthCallback,
+  userSignupController,
+  userLoginController,
+  userLogoutController,
+};
