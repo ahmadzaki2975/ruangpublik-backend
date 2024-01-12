@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import userRouter from "./routes/userRoutes";
+import authRouter from "./routes/authRoutes";
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.get("/", (req: Request, res: Response) => {
   `
   );
 });
+// * Auth Routes
+app.use("/api/auth", authRouter);
+
 // * User Routes
 app.use("/users", userRouter);
 
