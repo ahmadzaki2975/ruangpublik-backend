@@ -1,10 +1,16 @@
 import { Router } from "express";
-import { userLoginController, userSignupController } from "../controllers/authController";
+import {
+  userLoginController,
+  userSignupController,
+  googleAuthCallback,
+  googleAuthController,
+} from "../controllers/authController";
 
 const authRouter = Router();
 
-// TODO: add oauth login
 authRouter.post("/signup", userSignupController);
 authRouter.post("/login", userLoginController);
+authRouter.get("/google", googleAuthController);
+authRouter.get("/google/callback", googleAuthCallback);
 
 export default authRouter;

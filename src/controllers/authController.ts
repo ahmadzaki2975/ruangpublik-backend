@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
-import User from "../models/user";
 import { MongooseError } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { google } from "googleapis";
+
+import User from "../models/user";
 
 interface SignupUser {
   fullname: string;
@@ -17,6 +19,88 @@ interface LoginUser {
   email: string;
   password: string;
 }
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  "http://localhost:5000/auth/google/callback"
+);
+
+const scopes = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+];
+
+const authorizationUrl = oauth2Client.generateAuthUrl({
+  access_type: "online",
+  scope: scopes,
+  include_granted_scopes: true,
+});
+
+const googleAuthController = (req: Request, res: Response) => {
+  res.redirect(authorizationUrl);
+};
+
+const googleAuthCallback = async (req: Request, res: Response) => {
+  const { code } = req.query;
+  const { tokens } = await oauth2Client.getToken(code as string);
+
+  oauth2Client.setCredentials(tokens);
+
+  const oauth2 = google.oauth2({
+    auth: oauth2Client,
+    version: "v2",
+  });
+
+  const { data } = await oauth2.userinfo.get();
+
+  if (!data) {
+    return res.json({
+      success: false,
+      message: "Failed to retrieve user information from Google's OAuth2",
+    });
+  }
+
+  const user = await User.findOne({ email: data.email });
+
+  if (!user) {
+    try {
+      // NOTE: Initiate user data with "-" since it is required
+      const newUser = await User.create({
+        fullname: "-",
+        username: "-",
+        email: data.email,
+        password: "-",
+        nik: {
+          nikCode: "-",
+        },
+      });
+
+      newUser.save();
+
+      return res
+        .status(201)
+        .json({ success: true, message: `User with email: ${data.email} created!` });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const payload = { id: user?._id, email: user?.email };
+  const secret = process.env.ACCESS_TOKEN_SECRET!;
+  const expiresIn = 60 * 60 * 24;
+
+  const accessToken = jwt.sign(payload, secret, { expiresIn });
+
+  return res.json({
+    success: true,
+    message: `User with email: ${data.email} logged in`,
+    data: {
+      ...payload,
+      accessToken,
+    },
+  });
+};
 
 const userSignupController = async (req: Request, res: Response) => {
   try {
@@ -54,7 +138,7 @@ const userSignupController = async (req: Request, res: Response) => {
     }
     if (error instanceof MongooseError) {
       return res.status(400).json({ success: false, error: error.message });
-    } else {      
+    } else {
       return res.status(500).json({ success: false, error: "An unknown error occured" });
     }
   }
@@ -76,12 +160,11 @@ const userLoginController = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: "Email or password are incorrect" });
     }
 
+    const payload = { email: user.email, id: user._id };
+    const secret = process.env.ACCESS_TOKEN_SECRET!;
     const expiresIn = 60 * 60 * 24;
-    const accessToken = jwt.sign(
-      { email: user.email, id: user._id },
-      process.env.ACCESS_TOKEN_SECRET!,
-      { expiresIn }
-    );
+
+    const accessToken = jwt.sign(payload, secret, { expiresIn });
 
     return res.status(200).json({
       success: true,
@@ -94,10 +177,10 @@ const userLoginController = async (req: Request, res: Response) => {
     }
     if (error instanceof MongooseError) {
       return res.status(400).json({ success: false, error: error.message });
-    } else {      
+    } else {
       return res.status(500).json({ success: false, error: "An unknown error occured" });
     }
   }
 };
 
-export { userSignupController, userLoginController };
+export { googleAuthController, googleAuthCallback, userSignupController, userLoginController };
