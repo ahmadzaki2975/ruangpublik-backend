@@ -26,7 +26,8 @@ interface LoginUser {
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  "http://localhost:5000/auth/google/callback"
+  // TODO: change to homepage url
+  "http://localhost:3000"
 );
 
 const scopes = [
@@ -102,7 +103,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
     maxAge: 24 * 3600 * 1000,
   });
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     message: `User with email: ${data.email} logged in`,
     data: payload,
