@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
+import threadRouter from "./routes/threadRoutes";
+import commentRouter from "./routes/commentRoutes";
 
 dotenv.config();
 
@@ -43,6 +45,12 @@ app.use("/auth", authRouter);
 
 // * User Routes
 app.use("/users", userRouter);
+
+// * Thread Routes
+app.use("/threads", threadRouter);
+
+// * Comment Routes
+app.use("/comments", commentRouter);
 
 // ? No Route Handler
 app.use((req, res) => {
