@@ -2,7 +2,11 @@ import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import mongoose from "mongoose";
+import cors from "cors";
+
 import userRouter from "./routes/userRoutes";
+import authRouter from "./routes/authRoutes";
+import threadRouter from "./routes/threadRoutes";
 
 dotenv.config();
 
@@ -11,6 +15,7 @@ const port = process.env.PORT || 5000;
 
 app.use(morgan("dev"));
 app.use(express.json());
+app.use(cors());
 
 // ? Routes
 app.get("/", (req: Request, res: Response) => {
@@ -35,8 +40,15 @@ app.get("/", (req: Request, res: Response) => {
   `
   );
 });
+
+// * Auth Routes
+app.use("/auth", authRouter);
+
 // * User Routes
 app.use("/users", userRouter);
+
+// * Thread Routes
+app.use("/threads", threadRouter);
 
 // ? No Route Handler
 app.use((req, res) => {

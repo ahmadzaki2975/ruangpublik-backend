@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  fullname: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   username: {
     type: String,
     required: true,
@@ -19,9 +24,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  salt: {
-    type: String,
-    required: true,
+  nik: {
+    nikCode: {
+      type: String,
+      required: true,
+    },
+    is_verified: {
+      type: Boolean,
+      default: false,
+    },
   },
   role: {
     type: String,
