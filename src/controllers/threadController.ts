@@ -30,6 +30,48 @@ const getSingleThread = async (req: Request, res: Response) => {
   }
 };
 
+const upvoteDownvoteThread = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { upvote } = req.body;
+
+    const thread = await Thread.findById(id);
+
+    // TODO: get user id from token
+    if (thread) {
+      if (upvote) {
+        if (thread.upvotes.includes(req.body.userId)) {
+          thread.upvotes = thread.upvotes.filter((upvote) => upvote !== req.body.userId);
+        } else if (thread.downvotes.includes(req.body.userId)) {
+          thread.downvotes = thread.downvotes.filter((downvote) => downvote !== req.body.userId);
+          thread.upvotes.push(req.body.userId);
+          await thread.save();
+        } else {
+          thread.upvotes.push(req.body.userId);
+          await thread.save();
+        }
+        return res.status(200).json({ success: true, data: thread });
+      }
+
+      if (thread.downvotes.includes(req.body.userId)) {
+        thread.downvotes = thread.downvotes.filter((downvote) => downvote !== req.body.userId);
+      } else if (thread.upvotes.includes(req.body.userId)) {
+        thread.upvotes = thread.upvotes.filter((upvote) => upvote !== req.body.userId);
+        thread.downvotes.push(req.body.userId);
+        await thread.save();
+      } else {
+        thread.downvotes.push(req.body.userId);
+        await thread.save();
+      }
+      return res.status(200).json({ success: true, data: thread });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
 const getAllThreads = async (req: Request, res: Response) => {
   try {
     const threads = await Thread.find({});
@@ -74,4 +116,4 @@ const addComment = async (req: Request, res: Response) => {
   }
 };
 
-export { getSingleThread, getAllThreads, addThread, addComment };
+export { getSingleThread, upvoteDownvoteThread, getAllThreads, addThread, addComment };
