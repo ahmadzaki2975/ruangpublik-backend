@@ -26,8 +26,7 @@ interface LoginUser {
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  // TODO: change to homepage url
-  "http://localhost:3000"
+  "http://localhost:5000/auth/google/callback"
 );
 
 const scopes = [
@@ -82,9 +81,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
 
       newUser.save();
 
-      return res
-        .status(201)
-        .json({ success: true, message: `User with email: ${data.email} created!`, data: newUser });
+      return res.redirect("http://localhost:3000/signup?success=true");
     } catch (error) {
       return res.status(500).json({ success: false, error: "An unknown error occured" });
     }
