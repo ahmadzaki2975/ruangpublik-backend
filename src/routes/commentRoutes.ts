@@ -6,7 +6,7 @@ import {
   upvoteDownvoteComment,
   deleteComment,
 } from "../controllers/commentController";
-import { verifyToken } from "../models/verifyToken";
+import { verifyToken } from "../middleware/verifyToken";
 
 const commentRouter = Router();
 

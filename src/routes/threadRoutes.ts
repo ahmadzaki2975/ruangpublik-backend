@@ -7,7 +7,7 @@ import {
   getSingleThread,
   upvoteDownvoteThread,
 } from "../controllers/threadController";
-import { verifyToken } from "../models/verifyToken";
+import { verifyToken } from "../middleware/verifyToken";
 
 const threadRouter = Router();
 

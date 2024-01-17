@@ -6,7 +6,7 @@ import {
   getBookmarkedThreads,
   getUser,
 } from "../controllers/userControllers";
-import { verifyToken } from "../models/verifyToken";
+import { verifyToken } from "../middleware/verifyToken";
 
 const userRouter = Router();
 
