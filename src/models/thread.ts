@@ -28,6 +28,12 @@ const threadSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  bookmarks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
   downvotes: [
     {
       type: mongoose.Schema.Types.ObjectId,

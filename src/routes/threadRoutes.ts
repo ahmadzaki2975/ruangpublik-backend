@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addComment,
   addThread,
+  bookmarkThread,
   getAllThreads,
   getSingleThread,
   upvoteDownvoteThread,
@@ -12,8 +13,9 @@ const threadRouter = Router();
 
 threadRouter.get("/", getAllThreads);
 threadRouter.get("/:id", getSingleThread);
-threadRouter.put("/:id", verifyToken, upvoteDownvoteThread);
 threadRouter.post("/", verifyToken, addThread);
 threadRouter.post("/:id", verifyToken, addComment);
+threadRouter.put("/:id", verifyToken, upvoteDownvoteThread);
+threadRouter.put("/:id/bookmark", verifyToken, bookmarkThread);
 
 export default threadRouter;

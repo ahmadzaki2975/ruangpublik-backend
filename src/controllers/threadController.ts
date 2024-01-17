@@ -127,4 +127,34 @@ const addComment = async (req: Request, res: Response) => {
   }
 };
 
-export { getSingleThread, upvoteDownvoteThread, getAllThreads, addThread, addComment };
+const bookmarkThread = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.body.id;
+
+    const thread = await Thread.findById(id);
+
+    if (thread) {
+      if (thread.bookmarks.includes(userId)) {
+        thread.bookmarks = thread.bookmarks.filter((id) => String(id) !== userId);
+      } else {
+        thread.bookmarks.push(userId);
+      }
+      await thread.save();
+      return res.status(200).json({ success: true, data: thread });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
+export {
+  getSingleThread,
+  upvoteDownvoteThread,
+  getAllThreads,
+  addThread,
+  addComment,
+  bookmarkThread,
+};

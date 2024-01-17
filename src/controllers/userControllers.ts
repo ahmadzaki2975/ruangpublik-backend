@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import Thread from "../models/thread";
 import User from "../models/user";
 
 const deleteUser = async (req: Request, res: Response) => {
@@ -67,6 +68,18 @@ const getUser = async (req: Request, res: Response) => {
   }
 };
 
+const getBookmarkedThreads = async (req: Request, res: Response) => {
+  try {
+    const threads = await Thread.find({});
+    const userBookmark = threads.filter((thread) => thread.bookmarks.includes(req.body.id));
+    return res.status(200).json({ success: true, data: userBookmark });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
 // NOTE: error bang
 // const login = async (req: Request, res: Response) => {
 //   const { identifier, password } = req.body;
@@ -93,4 +106,4 @@ const getUser = async (req: Request, res: Response) => {
 //   }
 // };
 
-export { editUser, deleteUser, getUser, getAllUsers };
+export { deleteUser, editUser, getAllUsers, getBookmarkedThreads, getUser };
