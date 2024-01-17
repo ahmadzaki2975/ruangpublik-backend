@@ -33,34 +33,35 @@ const getSingleThread = async (req: Request, res: Response) => {
 const upvoteDownvoteThread = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { upvote } = req.body;
+
+    const upvote = req.body.upvote;
+    const userId = req.body.id;
 
     const thread = await Thread.findById(id);
 
-    // TODO: get user id from token
     if (thread) {
       if (upvote) {
-        if (thread.upvotes.includes(req.body.userId)) {
-          thread.upvotes = thread.upvotes.filter((upvote) => upvote !== req.body.userId);
-        } else if (thread.downvotes.includes(req.body.userId)) {
-          thread.downvotes = thread.downvotes.filter((downvote) => downvote !== req.body.userId);
-          thread.upvotes.push(req.body.userId);
+        if (thread.upvotes.includes(userId)) {
+          thread.upvotes = thread.upvotes.filter((upvote) => upvote !== userId);
+        } else if (thread.downvotes.includes(userId)) {
+          thread.downvotes = thread.downvotes.filter((downvote) => downvote !== userId);
+          thread.upvotes.push(userId);
           await thread.save();
         } else {
-          thread.upvotes.push(req.body.userId);
+          thread.upvotes.push(userId);
           await thread.save();
         }
         return res.status(200).json({ success: true, data: thread });
       }
 
-      if (thread.downvotes.includes(req.body.userId)) {
-        thread.downvotes = thread.downvotes.filter((downvote) => downvote !== req.body.userId);
-      } else if (thread.upvotes.includes(req.body.userId)) {
-        thread.upvotes = thread.upvotes.filter((upvote) => upvote !== req.body.userId);
-        thread.downvotes.push(req.body.userId);
+      if (thread.downvotes.includes(userId)) {
+        thread.downvotes = thread.downvotes.filter((downvote) => downvote !== userId);
+      } else if (thread.upvotes.includes(userId)) {
+        thread.upvotes = thread.upvotes.filter((upvote) => upvote !== userId);
+        thread.downvotes.push(userId);
         await thread.save();
       } else {
-        thread.downvotes.push(req.body.userId);
+        thread.downvotes.push(userId);
         await thread.save();
       }
       return res.status(200).json({ success: true, data: thread });
@@ -84,8 +85,14 @@ const getAllThreads = async (req: Request, res: Response) => {
 };
 
 const addThread = async (req: Request, res: Response) => {
+  const payload = {
+    title: req.body.title,
+    content: req.body.content,
+    poster: req.body.id,
+  };
+
   try {
-    const thread = await Thread.create(req.body);
+    const thread = await Thread.create(payload);
     return res.status(201).json({ success: true, data: thread });
   } catch (error) {
     if (error instanceof Error) {
@@ -97,11 +104,15 @@ const addThread = async (req: Request, res: Response) => {
 const addComment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     const thread = await Thread.findById(id);
 
+    const payload = {
+      content: req.body.content,
+      poster: req.body.id,
+    };
+
     if (thread) {
-      const newComment = await Comment.create(req.body);
+      const newComment = await Comment.create(payload);
       await newComment.save();
 
       thread.comments.push(newComment._id);

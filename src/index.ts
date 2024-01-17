@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 
 import userRouter from "./routes/userRoutes";
-import authRouter from "./routes/authRoutes";
+import authRouter from "./middleware/authRoutes";
 import threadRouter from "./routes/threadRoutes";
 import commentRouter from "./routes/commentRoutes";
 

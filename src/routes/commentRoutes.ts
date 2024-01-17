@@ -6,13 +6,14 @@ import {
   upvoteDownvoteComment,
   deleteComment,
 } from "../controllers/commentController";
+import { verifyToken } from "../models/verifyToken";
 
 const commentRouter = Router();
 
 commentRouter.get("/", getAllComments);
 commentRouter.get("/:id", getSingleComment);
-commentRouter.put("/:id", upvoteDownvoteComment);
-commentRouter.post("/:id", addReply);
-commentRouter.delete("/:id", deleteComment);
+commentRouter.put("/:id", verifyToken, upvoteDownvoteComment);
+commentRouter.post("/:id", verifyToken, addReply);
+commentRouter.delete("/:id", verifyToken, deleteComment);
 
 export default commentRouter;

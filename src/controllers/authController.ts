@@ -87,7 +87,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
     }
   }
 
-  const payload = { id: user?._id, email: user?.email };
+  const payload = { id: user?._id, email: user?.email, role: user?.role };
   const secret = process.env.ACCESS_TOKEN_SECRET!;
   const expiresIn = 60 * 60 * 24;
 
@@ -165,7 +165,7 @@ const userLoginController = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: "Email or password are incorrect" });
     }
 
-    const payload = { email: user.email, id: user._id };
+    const payload = { email: user.email, id: user._id, role: user.role };
     const secret = process.env.ACCESS_TOKEN_SECRET!;
     const expiresIn = 60 * 60 * 24;
 
