@@ -1,13 +1,12 @@
-import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
-import morgan from "morgan";
-import mongoose from "mongoose";
 import cors from "cors";
+import dotenv from "dotenv";
+import express, { Express, Request, Response } from "express";
+import mongoose from "mongoose";
+import morgan from "morgan";
 
-import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import threadRouter from "./routes/threadRoutes";
-import commentRouter from "./routes/commentRoutes";
+import userRouter from "./routes/userRoutes";
 
 dotenv.config();
 
@@ -50,9 +49,6 @@ app.use("/users", userRouter);
 
 // * Thread Routes
 app.use("/threads", threadRouter);
-
-// * Comment Routes
-app.use("/comments", commentRouter);
 
 // ? No Route Handler
 app.use((req, res) => {

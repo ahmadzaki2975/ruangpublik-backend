@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
 
 const threadSchema = new mongoose.Schema({
+  parents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Thread",
+    },
+  ],
   title: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
   },
   content: {
@@ -16,10 +22,10 @@ const threadSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  comments: [
+  replies: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Comment",
+      ref: "Thread",
     },
   ],
   upvotes: [

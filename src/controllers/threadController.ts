@@ -1,27 +1,75 @@
 import { Request, Response } from "express";
 import Thread from "../models/thread";
-import Comment from "../models/comment";
-import mongoose from "mongoose";
+import Notification from "../models/notification";
 
-const getSingleThread = async (req: Request, res: Response) => {
+interface INotification {
+  sender: string;
+  threadId: string;
+  type: "upvote" | "downvote" | "broadcast";
+}
+
+const upvoteDownvoteNotification = async (props: INotification) => {
   try {
-    const { id } = req.params;
-    const thread = await Thread.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(id) },
-      },
-      {
-        $lookup: {
-          from: "comments",
-          localField: "comments",
-          foreignField: "_id",
-          as: "comments",
-        },
-      },
-    ]);
+    await Notification.create(props);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const broadcastNotification = async (props: INotification) => {
+  try {
+    await Notification.create(props);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const createThread = async (req: Request, res: Response) => {
+  const role = req.body.role;
+
+  const payload = {
+    title: req.body.title,
+    content: req.body.content,
+    poster: req.body.id,
+    parents: [],
+  };
+
+  try {
+    const thread = await Thread.create(payload);
+    if (role === "admin") {
+      broadcastNotification({
+        sender: req.body.id,
+        threadId: String(thread._id),
+        type: "broadcast",
+      });
+    }
+    return res.status(201).json({ success: true, data: thread });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
+const createReply = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const thread = await Thread.findById(id);
+
+    const payload = {
+      content: req.body.content,
+      poster: req.body.id,
+      parents: thread?.parents.concat(thread._id),
+    };
 
     if (thread) {
-      return res.status(200).json({ success: true, data: thread });
+      const newComment = await Thread.create(payload);
+      await newComment.save();
+
+      thread.replies.push(newComment._id);
+      await thread.save();
+
+      return res.status(201).json({ success: true, data: newComment });
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -30,40 +78,31 @@ const getSingleThread = async (req: Request, res: Response) => {
   }
 };
 
-const upvoteDownvoteThread = async (req: Request, res: Response) => {
+const deleteThread = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
+    const thread = await Thread.findById(id);
 
-    const upvote = req.body.upvote;
-    const userId = req.body.id;
+    if (String(thread?.poster) !== req.body.id) {
+      return res
+        .status(403)
+        .json({ success: false, error: "You are not allowed to delete this thread" });
+    }
+    await thread?.deleteOne();
+    return res.status(200).json({ success: true, data: thread });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
 
+const getSingleThread = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
     const thread = await Thread.findById(id);
 
     if (thread) {
-      if (upvote) {
-        if (thread.upvotes.includes(userId)) {
-          thread.upvotes = thread.upvotes.filter((upvote) => upvote !== userId);
-        } else if (thread.downvotes.includes(userId)) {
-          thread.downvotes = thread.downvotes.filter((downvote) => downvote !== userId);
-          thread.upvotes.push(userId);
-          await thread.save();
-        } else {
-          thread.upvotes.push(userId);
-          await thread.save();
-        }
-        return res.status(200).json({ success: true, data: thread });
-      }
-
-      if (thread.downvotes.includes(userId)) {
-        thread.downvotes = thread.downvotes.filter((downvote) => downvote !== userId);
-      } else if (thread.upvotes.includes(userId)) {
-        thread.upvotes = thread.upvotes.filter((upvote) => upvote !== userId);
-        thread.downvotes.push(userId);
-        await thread.save();
-      } else {
-        thread.downvotes.push(userId);
-        await thread.save();
-      }
       return res.status(200).json({ success: true, data: thread });
     }
   } catch (error) {
@@ -84,16 +123,15 @@ const getAllThreads = async (req: Request, res: Response) => {
   }
 };
 
-const addThread = async (req: Request, res: Response) => {
-  const payload = {
-    title: req.body.title,
-    content: req.body.content,
-    poster: req.body.id,
-  };
-
+const getCorrespondingReplies = async (req: Request, res: Response) => {
   try {
-    const thread = await Thread.create(payload);
-    return res.status(201).json({ success: true, data: thread });
+    const id = req.params.id;
+    const thread = await Thread.findById(id);
+
+    if (thread) {
+      const replies = await Thread.find({ _id: { $in: thread.replies } });
+      return res.status(200).json({ success: true, data: replies });
+    }
   } catch (error) {
     if (error instanceof Error) {
       return res.status(500).json({ success: false, error: error.message });
@@ -101,24 +139,58 @@ const addThread = async (req: Request, res: Response) => {
   }
 };
 
-const addComment = async (req: Request, res: Response) => {
+const upvoteDownvoteThread = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
+    const upvote = req.body.upvote;
+    const userId = req.body.id;
+
     const thread = await Thread.findById(id);
 
-    const payload = {
-      content: req.body.content,
-      poster: req.body.id,
-    };
-
     if (thread) {
-      const newComment = await Comment.create(payload);
-      await newComment.save();
+      if (upvote) {
+        if (thread.upvotes.includes(userId)) {
+          thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);
+        } else if (thread.downvotes.includes(userId)) {
+          thread.downvotes = thread.downvotes.filter((id) => String(id) !== userId);
+          thread.upvotes.push(userId);
+          upvoteDownvoteNotification({
+            sender: userId,
+            threadId: id,
+            type: "upvote",
+          });
+        } else {
+          thread.upvotes.push(userId);
+          upvoteDownvoteNotification({
+            sender: userId,
+            threadId: id,
+            type: "upvote",
+          });
+        }
+        await thread.save();
+        return res.status(200).json({ success: true, data: thread });
+      }
 
-      thread.comments.push(newComment._id);
+      if (thread.downvotes.includes(userId)) {
+        thread.downvotes = thread.downvotes.filter((id) => String(id) !== userId);
+      } else if (thread.upvotes.includes(userId)) {
+        thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);
+        thread.downvotes.push(userId);
+        upvoteDownvoteNotification({
+          sender: userId,
+          threadId: id,
+          type: "downvote",
+        });
+      } else {
+        thread.downvotes.push(userId);
+        upvoteDownvoteNotification({
+          sender: userId,
+          threadId: id,
+          type: "downvote",
+        });
+      }
       await thread.save();
-
-      return res.status(201).json({ success: true, data: thread });
+      return res.status(200).json({ success: true, data: thread });
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -129,7 +201,7 @@ const addComment = async (req: Request, res: Response) => {
 
 const bookmarkThread = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
     const userId = req.body.id;
 
     const thread = await Thread.findById(id);
@@ -151,10 +223,12 @@ const bookmarkThread = async (req: Request, res: Response) => {
 };
 
 export {
+  createThread,
   getSingleThread,
-  upvoteDownvoteThread,
   getAllThreads,
-  addThread,
-  addComment,
+  createReply,
+  getCorrespondingReplies,
+  deleteThread,
   bookmarkThread,
+  upvoteDownvoteThread,
 };
