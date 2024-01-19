@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { NotificationType } from "../enums/enum";
 
 const notificationSchema = new mongoose.Schema({
   sender: {
@@ -12,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["upvote", "downvote", "broadcast"],
+    enum: Object.values(NotificationType),
     required: true,
   },
   createdAt: {

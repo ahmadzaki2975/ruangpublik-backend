@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
-import Thread from "../models/thread";
+import { ReportCategory, Role } from "../enums/enum";
 import Notification from "../models/notification";
+import Thread from "../models/thread";
+import Report from "../models/report";
 
 interface INotification {
   sender: string;
@@ -28,15 +30,16 @@ const createThread = async (req: Request, res: Response) => {
   const role = req.body.role;
 
   const payload = {
+    poster: req.body.id,
     title: req.body.title,
     content: req.body.content,
-    poster: req.body.id,
+    type: req.body.type,
     parents: [],
   };
 
   try {
     const thread = await Thread.create(payload);
-    if (role === "admin") {
+    if (role === Role.ADMIN) {
       broadcastNotification({
         sender: req.body.id,
         threadId: String(thread._id),
@@ -83,13 +86,13 @@ const deleteThread = async (req: Request, res: Response) => {
     const id = req.params.id;
     const thread = await Thread.findById(id);
 
-    if (String(thread?.poster) !== req.body.id) {
-      return res
-        .status(403)
-        .json({ success: false, error: "You are not allowed to delete this thread" });
+    if (String(thread?.poster) === req.body.id || req.body.role === Role.SUPER_ADMIN) {
+      await thread?.deleteOne();
+      return res.status(200).json({ success: true, data: thread });
     }
-    await thread?.deleteOne();
-    return res.status(200).json({ success: true, data: thread });
+    return res
+      .status(403)
+      .json({ success: false, error: "You are not allowed to delete this thread" });
   } catch (error) {
     if (error instanceof Error) {
       return res.status(500).json({ success: false, error: error.message });
@@ -123,7 +126,7 @@ const getAllThreads = async (req: Request, res: Response) => {
   }
 };
 
-const getCorrespondingReplies = async (req: Request, res: Response) => {
+const getReplyData = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
     const thread = await Thread.findById(id);
@@ -222,13 +225,111 @@ const bookmarkThread = async (req: Request, res: Response) => {
   }
 };
 
+const reportThread = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const thread = await Thread.findById(id);
+
+    if (thread) {
+      const report = await Report.create({
+        threadId: id,
+        type: req.body.type,
+        sender: req.body.id,
+      });
+
+      return res.status(201).json({ success: true, data: report });
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
+// const getThreadReports = async (req: Request, res: Response) => {
+//   try {
+//     const id = req.params.id;
+//     const thread = await Thread.findById(id);
+
+//     if (thread) {
+//       const reports = await Report.find({ threadId: id });
+//       return res.status(200).json({ success: true, data: reports });
+//     }
+
+//     return res.status(404).json({ success: false, error: "Thread not found" });
+//   } catch (error) {
+//     if (error instanceof Error) {
+//       return res.status(500).json({ success: false, error: error.message });
+//     }
+//   }
+// };
+
+const getReportSummary = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const thread = await Thread.findById(id);
+
+    if (thread) {
+      const reports = await Report.find({});
+      const reportSummary = {
+        hate: reports.filter((report) => report.type === ReportCategory.HATE).length,
+        abuse_harrasment: reports.filter(
+          (report) => report.type === ReportCategory.ABUSE_HARASSMENT
+        ).length,
+        violent_speech: reports.filter((report) => report.type === ReportCategory.VIOLENT_SPEECH)
+          .length,
+        spam: reports.filter((report) => report.type === ReportCategory.SPAM).length,
+        privacy: reports.filter((report) => report.type === ReportCategory.PRIVACY).length,
+        others: reports.filter((report) => report.type === ReportCategory.OTHERS).length,
+        count: reports.length,
+      };
+      return res.status(200).json({ success: true, data: reportSummary });
+    }
+
+    return res.status(404).json({ success: false, error: "Thread not found" });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error });
+    }
+  }
+};
+
+const bulkDeleteThread = async (req: Request, res: Response) => {
+  const query = req.query;
+  const ids = query.ids as string[];
+  const deletedIds: string[] = [];
+
+  try {
+    if (req.body.role !== Role.SUPER_ADMIN) {
+      return res.status(403).json({ success: false, error: "Unauthorized" });
+    }
+
+    ids.forEach(async (id: string) => {
+      const thread = await Thread.findById(id);
+      if (thread) {
+        await thread.deleteOne();
+        deletedIds.push(id);
+      }
+    });
+
+    return res.status(200).json({ success: true, message: `Threads deleted: ${deletedIds}` });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
 export {
-  createThread,
-  getSingleThread,
-  getAllThreads,
   createReply,
-  getCorrespondingReplies,
+  createThread,
   deleteThread,
+  bulkDeleteThread,
+  getAllThreads,
+  getReplyData,
+  getSingleThread,
+  getReportSummary,
   bookmarkThread,
+  reportThread,
   upvoteDownvoteThread,
 };

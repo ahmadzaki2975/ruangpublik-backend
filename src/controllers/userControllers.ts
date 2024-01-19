@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Thread from "../models/thread";
 import User from "../models/user";
 import Notification from "../models/notification";
+import { Role } from "../enums/enum";
 
 const getUser = async (req: Request, res: Response) => {
   try {
@@ -41,6 +42,13 @@ const getAllUsers = async (req: Request, res: Response) => {
 const editUser = async (req: Request, res: Response) => {
   try {
     const id = req.body.id;
+    const role = req.body.role;
+    const party = req.body.party;
+
+    if (party && role !== Role.ADMIN) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const user = await User.findByIdAndUpdate(id, { $set: req.body }, { new: true });
 
     if (user) {
@@ -109,31 +117,5 @@ const getNotification = async (req: Request, res: Response) => {
     }
   }
 };
-
-// NOTE: error bang
-// const login = async (req: Request, res: Response) => {
-//   const { identifier, password } = req.body;
-//   // identifier is either email or username
-//   try {
-//     const user = await User.findOne({
-//       $or: [{ email: identifier }, { username: identifier }],
-//     }).select("+password");
-//     if (!user) {
-//       return res.status(401).json({ success: false, message: "Invalid credentials" });
-//     }
-//     const isMatch = await user.comparePassword(password);
-//     if (!isMatch) {
-//       return res.status(401).json({ success: false, message: "Invalid credentials" });
-//     }
-//     const token = jsonwebtoken.sign({ id: user._id }, process.env.JWT_SECRET as string, {
-//       expiresIn: "1d",
-//     });
-//     return res.status(200).json({ success: true, token });
-//   } catch (error) {
-//     if (error instanceof Error) {
-//       return res.status(500).json({ success: false, error: error.message });
-//     }
-//   }
-// };
 
 export { deleteUser, editUser, getAllUsers, getBookmark, getNotification, getUser };

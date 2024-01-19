@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ThreadType } from "../enums/enum";
 
 const threadSchema = new mongoose.Schema({
   parents: [
@@ -7,6 +8,11 @@ const threadSchema = new mongoose.Schema({
       ref: "Thread",
     },
   ],
+  poster: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   title: {
     type: String,
     required: false,
@@ -17,10 +23,9 @@ const threadSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  poster: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
+  type: {
+    type: String,
+    enum: Object.values(ThreadType),
   },
   replies: [
     {

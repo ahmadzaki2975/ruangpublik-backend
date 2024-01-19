@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { PoliticalParty, Role } from "../enums/enum";
 
 const userSchema = new mongoose.Schema({
   fullname: {
@@ -37,8 +38,13 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ["admin", "user"],
-    default: "user",
+    enum: Object.values(Role),
+    default: Role.USER,
+  },
+  party: {
+    type: String,
+    enum: Object.values(PoliticalParty),
+    required: false,
   },
 });
 
