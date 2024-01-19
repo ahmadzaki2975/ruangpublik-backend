@@ -51,6 +51,10 @@ const threadSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
 });
 
 export default mongoose.model("Thread", threadSchema);
