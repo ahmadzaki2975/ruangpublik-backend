@@ -6,6 +6,7 @@ import { google } from "googleapis";
 import dotenv from "dotenv";
 
 import User from "../models/user";
+import { access } from "fs";
 
 dotenv.config();
 
@@ -183,7 +184,8 @@ const userLoginController = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: `User with email: ${email} logged in`,
+      // message: `User with email: ${email} logged in`,
+      message: accessToken,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
