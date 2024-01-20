@@ -178,6 +178,9 @@ const userLoginController = async (req: Request, res: Response) => {
       maxAge: 24 * 3600 * 1000,
     });
 
+    console.log("User logged in");
+    console.log("User data: ", user);
+
     return res.status(200).json({
       success: true,
       message: `User with email: ${email} logged in`,
