@@ -1,12 +1,11 @@
-import { Request, Response } from "express";
-import { MongooseError } from "mongoose";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { google } from "googleapis";
 import dotenv from "dotenv";
+import { Request, Response } from "express";
+import { google } from "googleapis";
+import jwt from "jsonwebtoken";
+import { MongooseError } from "mongoose";
 
 import User from "../models/user";
-import { access } from "fs";
 
 dotenv.config();
 
@@ -101,11 +100,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
     maxAge: 24 * 3600 * 1000,
   });
 
-  return res.status(200).json({
-    success: true,
-    message: `User with email: ${data.email} logged in`,
-    data: payload,
-  });
+  return res.redirect("http://localhost:3000/");
 };
 
 const userSignupController = async (req: Request, res: Response) => {
@@ -207,9 +202,9 @@ const userLogoutController = async (req: Request, res: Response) => {
 };
 
 export {
-  googleAuthController,
   googleAuthCallback,
-  userSignupController,
+  googleAuthController,
   userLoginController,
   userLogoutController,
+  userSignupController,
 };
