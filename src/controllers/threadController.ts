@@ -103,7 +103,7 @@ const deleteThread = async (req: Request, res: Response) => {
 const getSingleThread = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const thread = await Thread.findById(id);
+    const thread = await Thread.findById(id).populate("poster", "username").exec();
 
     if (thread) {
       return res.status(200).json({ success: true, data: thread });
@@ -117,7 +117,12 @@ const getSingleThread = async (req: Request, res: Response) => {
 
 const getAllThreads = async (req: Request, res: Response) => {
   try {
-    const threads = await Thread.find({});
+    const threads = await Thread.find({})
+      .populate({
+        path: "poster",
+        select: "username",
+      })
+      .exec();
     return res.status(200).json({ success: true, data: threads });
   } catch (error) {
     if (error instanceof Error) {
