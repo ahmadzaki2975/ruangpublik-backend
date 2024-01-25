@@ -137,7 +137,9 @@ const getReplyData = async (req: Request, res: Response) => {
     const thread = await Thread.findById(id);
 
     if (thread) {
-      const replies = await Thread.find({ _id: { $in: thread.replies } });
+      const replies = await Thread.find({ _id: { $in: thread.replies } })
+        .populate("poster", "username")
+        .exec();
       return res.status(200).json({ success: true, data: replies });
     }
   } catch (error) {
