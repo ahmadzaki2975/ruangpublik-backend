@@ -103,11 +103,21 @@ const getNotification = async (req: Request, res: Response) => {
   try {
     // find all threads that the poster is the user
     const threads = await Thread.find({ poster: req.body.id });
+    console.log(threads);
     if (threads) {
       // find all notifications that the postId is same as threads(array).id or notification type is broadcast
+      // sort by createdAt
       const notifications = await Notification.find({
         $or: [{ threadId: { $in: threads } }, { type: "broadcast" }],
-      });
+      })
+        .sort({ createdAt: -1 })
+        .populate("sender", "username")
+        .exec();
+
+      if (notifications.length > 5) {
+        return res.status(200).json({ success: true, data: notifications.slice(0, 5) });
+      }
+
       return res.status(200).json({ success: true, data: notifications });
     }
     return res.status(200).json({ success: true, data: [] });

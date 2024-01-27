@@ -160,7 +160,7 @@ const upvoteDownvoteThread = async (req: Request, res: Response) => {
     if (thread) {
       if (upvote) {
         if (thread.upvotes.includes(userId)) {
-          thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);
+          thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);          
         } else if (thread.downvotes.includes(userId)) {
           thread.downvotes = thread.downvotes.filter((id) => String(id) !== userId);
           thread.upvotes.push(userId);
