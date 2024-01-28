@@ -45,3 +45,10 @@ export enum PoliticalParty {
   PPP = "Partai Persatuan Pembangunan",
   PU = "Partai Ummat",
 }
+
+export enum NIKVerificationStatus {
+  DRAFT = "draft",
+  PENDING = "pending",
+  VERIFIED = "verified",
+  REJECTED = "rejected",
+}

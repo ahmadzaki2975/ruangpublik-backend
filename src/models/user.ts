@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { PoliticalParty, Role } from "../enums/enum";
+import { NIKVerificationStatus, PoliticalParty, Role } from "../enums/enum";
 
 const userSchema = new mongoose.Schema({
   fullname: {
@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema({
     is_verified: {
       type: Boolean,
       default: false,
+    },
+    status: {
+      type: String,
+      enum: Object.values(NIKVerificationStatus),
+      default: NIKVerificationStatus.DRAFT,
     },
   },
   role: {

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Thread from "../models/thread";
 import User from "../models/user";
 import Notification from "../models/notification";
-import { Role } from "../enums/enum";
+import { NIKVerificationStatus, Role } from "../enums/enum";
 
 const getUser = async (req: Request, res: Response) => {
   try {
@@ -44,12 +44,49 @@ const editUser = async (req: Request, res: Response) => {
     const id = req.body.id;
     const role = req.body.role;
     const party = req.body.party;
+    const status = req.body.status;
+    const nikCode = req.body.nikCode;
+
+    const adminAction =
+      status === NIKVerificationStatus.VERIFIED || status === NIKVerificationStatus.REJECTED;
 
     if (party && role !== Role.ADMIN) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await User.findByIdAndUpdate(id, { $set: req.body }, { new: true });
+    if (adminAction && role !== Role.ADMIN) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    let updateObject = req.body;
+
+    if (nikCode) {
+      updateObject = {
+        ...updateObject,
+        "nik.nikCode": nikCode,
+      };
+    }
+
+    if (status) {
+      updateObject = {
+        ...updateObject,
+        "nik.status": status,
+      };
+
+      if (status === NIKVerificationStatus.REJECTED) {
+        updateObject = {
+          ...updateObject,
+          "nik.is_verified": false,
+        };
+      } else if (status === NIKVerificationStatus.VERIFIED) {
+        updateObject = {
+          ...updateObject,
+          "nik.is_verified": true,
+        };
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(id, { $set: updateObject }, { new: true });
 
     if (user) {
       return res
@@ -89,7 +126,8 @@ const deleteUser = async (req: Request, res: Response) => {
 
 const getBookmark = async (req: Request, res: Response) => {
   try {
-    const threads = await Thread.find({});
+    const search = req.query.search as string;
+    const threads = await Thread.find(search ? { title: { $regex: search, $options: "i" } } : {});
     const userBookmark = threads.filter((thread) => thread.bookmarks.includes(req.body.id));
     return res.status(200).json({ success: true, data: userBookmark });
   } catch (error) {
@@ -100,13 +138,14 @@ const getBookmark = async (req: Request, res: Response) => {
 };
 
 const getNotification = async (req: Request, res: Response) => {
+  const query = req.query;
+  const limit = Number(query.limit);
+
   try {
     // find all threads that the poster is the user
     const threads = await Thread.find({ poster: req.body.id });
-    console.log(threads);
     if (threads) {
       // find all notifications that the postId is same as threads(array).id or notification type is broadcast
-      // sort by createdAt
       const notifications = await Notification.find({
         $or: [{ threadId: { $in: threads } }, { type: "broadcast" }],
       })
@@ -114,8 +153,8 @@ const getNotification = async (req: Request, res: Response) => {
         .populate("sender", "username")
         .exec();
 
-      if (notifications.length > 5) {
-        return res.status(200).json({ success: true, data: notifications.slice(0, 5) });
+      if (notifications.length > limit && limit !== 0) {
+        return res.status(200).json({ success: true, data: notifications.slice(0, limit) });
       }
 
       return res.status(200).json({ success: true, data: notifications });

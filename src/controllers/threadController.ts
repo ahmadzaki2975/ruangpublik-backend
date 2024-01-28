@@ -116,8 +116,10 @@ const getSingleThread = async (req: Request, res: Response) => {
 };
 
 const getAllThreads = async (req: Request, res: Response) => {
+  const search = req.query.search as string;
+
   try {
-    const threads = await Thread.find({})
+    const threads = await Thread.find(search ? { title: { $regex: search, $options: "i" } } : {})
       .populate({
         path: "poster",
         select: "username",
@@ -160,7 +162,7 @@ const upvoteDownvoteThread = async (req: Request, res: Response) => {
     if (thread) {
       if (upvote) {
         if (thread.upvotes.includes(userId)) {
-          thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);          
+          thread.upvotes = thread.upvotes.filter((id) => String(id) !== userId);
         } else if (thread.downvotes.includes(userId)) {
           thread.downvotes = thread.downvotes.filter((id) => String(id) !== userId);
           thread.upvotes.push(userId);
