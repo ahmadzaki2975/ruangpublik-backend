@@ -71,7 +71,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
       // NOTE: Initiate user data with "-" since it is required
       const newUser = await User.create({
         fullname: "-",
-        username: "-",
+        username: data.name,
         email: data.email,
         password: "-",
         nik: {
@@ -94,7 +94,7 @@ const googleAuthCallback = async (req: Request, res: Response) => {
   const accessToken = jwt.sign(payload, secret, { expiresIn });
 
   res.cookie("accessToken", accessToken, {
-    httpOnly: true,
+    httpOnly: false,
     sameSite: "none",
     secure: true,
     maxAge: 24 * 3600 * 1000,
@@ -166,6 +166,7 @@ const userLoginController = async (req: Request, res: Response) => {
     const expiresIn = 60 * 60 * 24;
 
     const accessToken = jwt.sign(payload, secret, { expiresIn });
+    console.log("Access token: ", accessToken);
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
